@@ -21,7 +21,7 @@ typedef struct {
 
 lib_t libdata;
 
-#define LIBC "/lib/x86_64-linux-gnu/libc.so.6"
+#define LIBC "/lib/aarch64-linux-gnu/libc.so.6"
 
 #define log(M, ...) fprintf(stdout, "[%s:%d] " M "\n", strrchr(__FILE__, '/') > 0 \
             ? strrchr(__FILE__, '/') + 1 : __FILE__ , __LINE__, ##__VA_ARGS__); 
@@ -29,31 +29,33 @@ lib_t libdata;
             ? strrchr(__FILE__, '/') + 1 : __FILE__ , __LINE__, ##__VA_ARGS__, strerror(errno)); 
 
 int     my_open(const char *pathname, int flags); 
-off_t   my_lseek64(int fd, off_t offset, int whence);
+//ssize_t my_pread64(int fd, void *buf, size_t count,off_t offset);
 ssize_t my_read(int fd, void *buf, size_t count);
 void *  my_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 int     my_fstat(int stat_ver, int fd, struct stat *buf);
 int     my_close(int fd);
 
-// 0x7ffff7de1256 <open_verify+102>:mov    rdx,r15
-// 0x7ffff7de1259 <open_verify+105>:lea    rsi,[rbx+r14*1+0x8]
-// 0x7ffff7de125e <open_verify+110>:sub    rdx,r14
-// 0x7ffff7de1261 <open_verify+113>:callq   0x7ffff7df3200 <read>
+//0xfffff7fd2dd4                  sub    x2,  x24,  x1
+//0xfffff7fd2dd8                  mov    w0,  w28
+//0xfffff7fd2ddc                  add    x1,  x26,  x1
+//0xfffff7fd2de0                  bl     0xfffff7fe3d20
 //
-// 0x7ffff7de1256 <open_verify+102>:0x4c 0x89 0xfa 0x4a 0x8d 0x74 0x33 0x8
-// 0x7ffff7de125e <open_verify+110>:0x4c 0x29 0xf2 0xe8 0x9a 0x1f 0x1  0x0
-const char read_pattern[] = {0x4c,0x89,0xfa,0x4a,0x8d,0x74,0x33,0x8,0x4c,0x29,0xf2,0xe8};
-#define read_pattern_length 12
+//0xfffff7fd2dd4:	0x02	0x03	0x01	0xcb	0xe0	0x03	0x1c	0x2a
+//0xfffff7fd2ddc:	0x41	0x03	0x01	0x8b	0xd0	0x43	0x00	0x94
+const char read_pattern[] = {0x02,0x03,0x01,0xcb,0xe0,0x03,0x1c,0x2a,0x41,0x03,0x01,0x8b,0xd0,0x43,0x00,0x94};
+#define read_pattern_length 16
 
-// 0x00007ffff7de220f <+1263>:mov    r8d,DWORD PTR [rbp-0xdc]
-// 0x00007ffff7de2216 <+1270>:mov    rsi,QWORD PTR [rbp-0xd8]
-// 0x00007ffff7de221d <+1277>:call   0x7ffff7df3310 <mmap64>
-//              
-// 0x7ffff7de220f <_dl_map_object_from_fd+1263>:0x44 0x8b 0x85 0x24 0xff 0xff 0xff 0x48
-// 0x7ffff7de2217 <_dl_map_object_from_fd+1271>:0x8b 0xb5 0x28 0xff 0xff 0xff 0xe8 0xee
-const char mmap_pattern[] = {0x44,0x8b,0x85,0x24,0xff,0xff,0xff,0x48,0x8b,0xb5,0x28,0xff,0xff,0xff,0xe8};
-#define mmap_pattern_length 15
+//0xfffff7fd1d64                  str    w7,  [x29,  #144]
+//0xfffff7fd1d68                  str    x11,  [x29,  #152]
+//0xfffff7fd1d6c                  str    w12,  [x29,  #160]
+//0xfffff7fd1d70                  bl     0xfffff7fe3e80
+//
+//0xfffff7fd1d64:	0xa7	0x93	0x00	0xb9	0xab	0x4f	0x00	0xf9
+//0xfffff7fd1d6c:	0xac	0xa3	0x00	0xb9	0x44	0x48	0x00	0x94
+const char mmap_pattern[] = {0xa7,0x93,0x00,0xb9,0xab,0x4f,0x00,0xf9,0xac,0xa3,0x00,0xb9,0x44,0x48,0x00,0x94};
+#define mmap_pattern_length 16
 
+/*
 // 0x00007ffff7de26c2 <+2466>:sub    rsp,rax
 // 0x00007ffff7de26c5 <+2469>:mov    edi,r15d
 // 0x00007ffff7de26c8 <+2472>:lea    r12,[rsp+0x4c7]
@@ -61,48 +63,47 @@ const char mmap_pattern[] = {0x44,0x8b,0x85,0x24,0xff,0xff,0xff,0x48,0x8b,0xb5,0
 //              
 // 0x7ffff7de26c2 <_dl_map_object_from_fd+2466>:0x48 0x29 0xc4 0x44 0x89 0xff 0x4c 0x8d
 // 0x7ffff7de26ca <_dl_map_object_from_fd+2474>:0x64 0x24 0x47 0xe8 0xae 0x0c 0x01 0x00
-const char lseek_pattern[] = {0x48,0x29,0xc4,0x44,0x89,0xff,0x4c,0x8d,0x64,0x24,0x47,0xe8};
-#define lseek_pattern_length 12
+const char pread_pattern[] = {0x48,0x29,0xc4,0x44,0x89,0xff,0x4c,0x8d,0x64,0x24,0x47,0xe8};
+#define pread_pattern_length 12
+*/
 
-// 0x7ffff7de1d6a <_dl_map_object_from_fd+74>:mov    esi,esir15d
-// 0x7ffff7de1d6d <_dl_map_object_from_fd+77>:mov    edi,0x1
-// 0x7ffff7de1d72 <_dl_map_object_from_fd+82>:mov    QWORD PTR [rbp-0xe8],0xe8rax
-// 0x7ffff7de1d79 <_dl_map_object_from_fd+89>:call   0x7ffff7df3160 <__GI___fxstat>
+//0xfffff7fd1f60                  add    x2,  x29,  #0xf0
+//0xfffff7fd1f64                  mov    w1,  w21
+//0xfffff7fd1f68                  mov    w0,  #0x0                  
+//0xfffff7fd1f6c                  bl     0xfffff7fe3a20
 //
-// 0x7ffff7de1d6a <_dl_map_object_from_fd+74>:0x44 0x89 0xfe 0xbf 0x1 0x0 0x0 0x0
-// 0x7ffff7de1d72 <_dl_map_object_from_fd+82>:0x48 0x89 0x85 0x18 0xff 0xff 0xff 0xe8
-const char fxstat_pattern[] = {0x44,0x89,0xfe,0xbf,0x1,0x0,0x0,0x0,0x48,0x89,0x85,0x18,0xff,0xff,0xff,0xe8};
+//0xfffff7fd1f60:	0xa2	0xc3	0x03	0x91	0xe1	0x03	0x15	0x2a
+//0xfffff7fd1f68:	0x00	0x00	0x80	0x52	0xad	0x46	0x00	0x94
+//
+const char fxstat_pattern[] = {0xa2,0xc3,0x03,0x91,0xe1,0x03,0x15,0x2a,0x00,0x00,0x80,0x52,0xad,0x46,0x00,0x94};
 #define fxstat_pattern_length 16
 
-// 0x7ffff7de25dc <_dl_map_object_from_fd+2236>:add    rax,QWORDWORD PTR [rbx]
-// 0x7ffff7de25df <_dl_map_object_from_fd+2239>:mov    QWORD PTR [rbx+0x418],rax
-// 0x7ffff7de25e6 <_dl_map_object_from_fd+2246>:mov    edi,DWORD PTR [rbp-0xdc]
-// 0x7ffff7de25ec <_dl_map_object_from_fd+2252>:call   0x7ffff7df32f0 <close>
+//0xfffff7fd24c4                  add    x0,  x0,  x1
+//0xfffff7fd24c8                  str    x0,  [x27,  #1104]
+//0xfffff7fd24cc                  mov    w0,  w21
+//0xfffff7fd24d0                  bl     0xfffff7fe3b20
 //
-// 0x7ffff7de25dc <_dl_map_object_from_fd+2236>:0x48 0x3 0x3 0x48 0x89 0x83 0x18 0x4
-// 0x7ffff7de25e4 <_dl_map_object_from_fd+2244>:0x0 0x0 0x8b 0xbd 0x24 0xff 0xff 0xff
-// 0x7ffff7de25ec <_dl_map_object_from_fd+2252>:0xe8 0xff 0xc 0x1
-//  
-const char close_pattern[] = {0x48,0x3,0x3,0x48,0x89,0x83,0x18,0x4,0x0,0x0,0x8b,0xbd,0x24,0xff,0xff,0xff,0xe8};
-#define close_pattern_length 17
+//0xfffff7fd24c4:	0x00	0x00	0x01	0x8b	0x60	0x2b	0x02	0xf9
+//0xfffff7fd24cc:	0xe0	0x03	0x15	0x2a	0x94	0x45	0x00	0x94  
+const char close_pattern[] = {0x00,0x00,0x01,0x8b,0x60,0x2b,0x02,0xf9,0xe0,0x03,0x15,0x2a,0x94,0x45,0x00,0x94};
+#define close_pattern_length 16
 
-// 0x00007f9e03e7a21d <+45>:mov    rdi,QWORD PTR [rbp-0x40]
-// 0x00007f9e03e7a221 <+49>:xor    eax,eax
-// 0x00007f9e03e7a223 <+51>:mov    esi,0x80000
-// 0x00007f9e03e7a228 <+56>:call   0x7f9e03e8c1e0 <open64>
+//0xfffff7fd2da4                  mov    x0,  x19
+//0xfffff7fd2da8                  mov    w1,  #0x80000           
+//0xfffff7fd2dac                  bl     0xfffff7fe3c00
 //
-// 0x7f9e03e7a21d <open_verify+45>:0x48 0x8b 0x7d 0xc0 0x31 0xc0 0xbe 0x0
-// 0x7f9e03e7a225 <open_verify+53>:0x0 0x8 0x0 0xe8 0xb3 0x1f 0x1 0x0
-const char open_pattern[] = {0x48,0x8b,0x7d,0xc0,0x31, 0xc0,0xbe,0x0,0x0,0x8,0x0,0xe8};
+//0xfffff7fd2da4:	0xe0	0x03	0x13	0xaa	0x01	0x01	0xa0	0x52
+//0xfffff7fd2dac:	0x95	0x43	0x00	0x94
+const char open_pattern[] = {0xe0,0x03,0x13,0xaa,0x01,0x01,0xa0,0x52,0x95,0x43,0x00,0x94};
 #define open_pattern_length 12
 
 
-const char* patterns[] = {read_pattern, mmap_pattern, lseek_pattern, fxstat_pattern, close_pattern,
+const char* patterns[] = {read_pattern, mmap_pattern, fxstat_pattern, close_pattern,
                           open_pattern, NULL};
-const size_t pattern_lengths[] = {read_pattern_length, mmap_pattern_length, lseek_pattern_length, 
+const size_t pattern_lengths[] = {read_pattern_length, mmap_pattern_length, 
                                   fxstat_pattern_length, close_pattern_length, open_pattern_length, 0};
-const char* symbols[] = {"read", "mmap", "lseek", "fxstat", "close", "open", NULL};
-uint64_t functions[] = {(uint64_t)&my_read, (uint64_t)&my_mmap, (uint64_t)&my_lseek64, (uint64_t)&my_fstat, 
+const char* symbols[] = {"read", "mmap","fxstat", "close", "open", NULL};
+uint64_t functions[] = {(uint64_t)&my_read, (uint64_t)&my_mmap, (uint64_t)&my_fstat, 
                         (uint64_t)&my_close, (uint64_t)&my_open, 0}; 
 
 size_t page_size;
@@ -203,6 +204,7 @@ int my_open(const char *pathname, int flags) {
     return mylegacyopen(pathname, flags);
 }
 
+/*
 off_t my_lseek64(int fd, off_t offset, int whence) {
     void *handle;
     int (*mylegacylseek)(int fd, off_t offset, int whence);
@@ -226,6 +228,7 @@ off_t my_lseek64(int fd, off_t offset, int whence) {
     }
     return mylegacylseek(fd, offset, whence); 
 }
+*/
 
 ssize_t my_read(int fd, void *buf, size_t count){
     void *handle;
@@ -320,14 +323,21 @@ bool search_and_patch(uint64_t start_addr, uint64_t end_addr, const char* patter
     char * code = NULL;
     void * page_addr = NULL;
 
-    // push   rbp
-    // mov    rbp,rsp
-    // movabs rax,0x0000000000000000
-    // call   rax
-    // leave  
+    /*
+    // stp     x29, x30, [sp, #-16]!
+    // mov x29,sp
+    // ldr x16,=0x1234567890abcdef
+    // br    x16
+    // ldp     x29, x30, [sp], #16 
     // ret
-    char stub[] = {0x55, 0x48, 0x89, 0xe5, 0x48, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xd0, 0xc9, 0xc3};
-    size_t stub_length = 18;
+    // asm("stp x29,x30,[sp,#-16]!;mov x29,sp;ldr x16,=0x1234567890abcdef;br x16;ldp x29,x30,[sp],#16;ret;", arch = 'arm64', os = 'linux').hex()
+    char stub[] = {0xfd,0x7b,0xbf,0xa9,0xfd,0x03,0x00,0x91,0x90,0x00,0x00,0x58,0x00,0x02,0x1f,0xd6,0xfd,0x7b,0xc1,0xa8,0xc0,0x03,0x5f,0xd6,0,0,0,0,0,0,0,0};
+    size_t stub_length = 32;
+    */
+
+    char stub[] = {0x50,0x00,0x00,0x58,0x00,0x02,0x1f,0xd6,0,0,0,0,0,0,0,0};
+    size_t stub_length = 16;
+    size_t off = 8;
 
     tmp_addr = start_addr;
     while ( ! found && tmp_addr+length < end_addr) {
@@ -336,15 +346,15 @@ bool search_and_patch(uint64_t start_addr, uint64_t end_addr, const char* patter
             found = true;
             continue;
         }
-        ++tmp_addr;
+        tmp_addr+=4;
     }
 
     if ( ! found ) {
         return false;
     }
 
-    offset = *((uint64_t*)(tmp_addr + length));
-    symbol_addr = tmp_addr + length + 4 + offset;
+    offset = *((uint64_t*)(tmp_addr-4 + length));
+    symbol_addr = tmp_addr -4  + length + (((offset<<6)&0xffffffff)>>6)*4;
 
     log("offset is %d, %s addr is 0x%lx", offset, symbol, symbol_addr);
 
@@ -352,7 +362,7 @@ bool search_and_patch(uint64_t start_addr, uint64_t end_addr, const char* patter
 
     code = malloc(stub_length * sizeof(char));
     memcpy(code, stub, stub_length);
-    memcpy(code+6, &replacement_addr, sizeof(uint64_t));
+    memcpy(code+off, &replacement_addr, sizeof(uint64_t));
 
 
     // changing page protection before writting
@@ -383,7 +393,7 @@ bool find_ld_in_memory(uint64_t *addr1, uint64_t *addr2) {
 		if ( strstr(buffer, "r-xp") == 0 ) {
 			continue;
         }
-        if ( strstr(buffer, "ld-2.19.so") == 0 ) {
+        if ( strstr(buffer, "ld-2.31.so") == 0 ) {
             continue;        
         }
 
@@ -392,7 +402,6 @@ bool find_ld_in_memory(uint64_t *addr1, uint64_t *addr2) {
         if ( tmp == NULL || tmp[0] != ' ')
             continue;
         ++tmp;
-
 		start = strtok(buffer, "-");
 		*addr1 = strtoul(start, NULL, 16);
 		end = strtok(NULL, " ");
@@ -421,7 +430,7 @@ int main(int argc, char **argv) {
 
     page_size = sysconf(_SC_PAGESIZE);
 
-    while ( (c = getopt (argc, argv, "f:l:h")) != -1 ) {
+    c = getopt (argc, argv, "f:l:h");
         switch (c) {
             case 'f':
                 path = optarg;
@@ -444,7 +453,7 @@ int main(int argc, char **argv) {
             default:
                 abort();
         }
-    }    
+        
     
     if ( path == NULL && port == 0 ) {
         print_help();
